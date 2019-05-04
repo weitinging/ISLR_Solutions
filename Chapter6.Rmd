@@ -1,0 +1,292 @@
+---
+title: ''
+output: html_document
+---
+
+
+###2.(a)
+III正确。lasso相比最小二乘法，加入惩罚项，灵活度减小。当最小二乘估计出现较大方差时，lasso以牺牲偏差为代价去降低方差，从而得到更为精确的预测结果。所以当lasso模型的预测结果的偏差增大的大小小于其方差减小的大小时，lasso模型给出的预测值更精确。
+
+###2.(b)
+III正确。ridge regression相比最小二乘法，加入惩罚项，灵活度减小。当最小二乘估计出现较大方差时，ridge regression 以牺牲偏差为代价去降低方差，从而得到更为精确的预测结果。所以当lasso模型的预测结果的偏差增大的大小小于其方差减小的大小时，lasso模型给出的预测值更精确。
+
+###2.(c)
+II正确。非线性方法更加灵活，并且非线性方法的偏差较小，方差较大。
+
+###4.(a)
+III：随着$\lambda$的增加，训练集上的RSS会稳定增加。  
+当$\lambda$ = 0， RSS和最小二乘法的RSS相等，训练集上的RSS最小（过拟合）。 
+当$\lambda$增加，$\beta$减小，过拟合现象减小，训练集上的RSS增加
+
+###4.(b)
+II：随着$\lambda$的增加，检验集上的RSS会呈现一个U型。
+当$\lambda$ = 0， RSS和最小二乘法的RSS相等，检验集上的RSS较高
+当$\lambda$增加，$\beta$减小，过拟合现象减小，检验集RSS减小
+当$\lambda趋向于正无穷$，$\beta趋向于0$，模型过于简单，而导致检验集RSS增加。最终呈现一个U型
+
+###4.(c)
+IV：随着$\lambda$的增加，训练集上的方差会稳定减小。
+当$\lambda$ = 0，为过拟合，方差最大。当$\lambda$增加，过拟合减小，方差减小
+
+###4.(d)
+III：随着$\lambda$的增加，训练集上的偏差会稳定增加。
+当$\lambda$ = 0，为过拟合，偏差最小。当$\lambda$增加，过拟合减小，偏差增加
+
+###4.(e)
+V：随着$\lambda$的增加，训练集上的不可约误差保持不变。不可约误差在样本间相互独立，所以随着$\lambda$值的增加，保持不变
+
+###6.(a)
+当p=1时，$(y_1-\beta_1)^2 + \lambda\beta_1^2$  
+$minimize\{(y_1-\beta_1)^2 + \lambda\beta_1^2\}$  
+
+```{r}
+y = 5
+lambda = 20
+beta = seq(-10,10,0.4)
+fun = (y - beta)^2 + lambda*beta^2
+plot(beta, fun, cex = 1)
+best_beta = y/(1 + lambda)
+best_fun = (y - best_beta)^2 + lambda*best_beta^2
+points(best_beta, best_fun, col = "red", pch = 20 )
+min(fun)
+best_fun
+```
+
+###6.(b)
+当p=1时，$(y_1-\beta_1)^2 + \lambda|\beta_1|$  
+$minimize\{(y_1-\beta_1)^2 + \lambda|\beta_1|\}$  
+
+```{r}
+y = 5
+lambda = 20
+beta = seq(-10,10,0.4)
+fun = (y - beta)^2 + lambda*abs(beta)
+plot(beta, fun, cex = 1)
+best_beta = 0
+best_fun = (y - best_beta)^2 + lambda*abs(best_beta)
+points(best_beta, best_fun, col = "red", pch = 20 )
+min(fun)
+best_fun
+```
+
+###8.(a) & (b)
+```{r}
+set.seed(1)
+x = rnorm(100)
+epsilon = rnorm(100)
+y = 3 + 1*x + 2*x^2 + 3*x^3 + epsilon
+```
+
+###8.(c)
+```{r}
+library(leaps)
+xy = data.frame(x, y)
+regfit.full = regsubsets(y ~ poly(x, 10, raw = T), data = xy, nvmax = 10)
+reg.summary = summary(regfit.full)
+plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+which.max(reg.summary$adjr2)
+points(4,reg.summary$adjr2[4], col = "red", cex = 2, pch = 20 )
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+which.min(reg.summary$cp)
+points(4,reg.summary$cp[4], col = "red", cex = 2, pch = 20 )
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+which.min(reg.summary$bic)
+points(3,reg.summary$bic[3], col = "red", cex = 2, pch = 20 )
+#adjr2最大值为4，cp最小值为4，BIC最小值为3，但是结合图像，当number of variables = 3时，这三个统计量对应的值与其最优值相差很小，根据principle of parsimary原则，我们选择number of variables = 3
+coef(regfit.full, 3)
+
+```
+
+###8.(d)
+（1）最优子集选择法和向前选择法得到adjr2最大值为4，cp最小值为4，BIC最小值为3   ，向后选择法得到adjr2最大值为7，cp最小值为7，BIC最小值为5    
+（2）当选择number of variables = 3时，最优子集选择法,向前和向后选择法三种方法得到的系数相同  
+```{r}
+regfit.fwd = regsubsets(y ~ poly(x, 10, raw = T), data = xy, nvmax = 10, method = "forward")
+fwd.summary = summary(regfit.fwd)
+plot(fwd.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+which.max(fwd.summary$adjr2)
+points(4,fwd.summary$adjr2[4], col = "red", cex = 2, pch = 20 )
+plot(fwd.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+which.min(fwd.summary$cp)
+points(4,fwd.summary$cp[4], col = "red", cex = 2, pch = 20 )
+plot(fwd.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+which.min(fwd.summary$bic)
+points(3,fwd.summary$bic[3], col = "red", cex = 2, pch = 20 )
+#adjr2最大值为4，cp最小值为4，BIC最小值为3  ，但是结合图像，当number of variables = 3时，这三个统计量对应的值与其最优值相差很小，根据principle of parsimary原则，我们选择number of variables = 3
+coef(regfit.full, 3)
+
+regfit.bwd = regsubsets(y ~ poly(x, 10, raw = T), data = xy, nvmax = 10, method = "backward")
+bwd.summary = summary(regfit.bwd)
+plot(bwd.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+which.max(bwd.summary$adjr2)
+points(7,bwd.summary$adjr2[7], col = "red", cex = 2, pch = 20 )
+plot(bwd.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+which.min(bwd.summary$cp)
+points(7,bwd.summary$cp[7], col = "red", cex = 2, pch = 20 )
+plot(bwd.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+which.min(bwd.summary$bic)
+points(5,bwd.summary$bic[5], col = "red", cex = 2, pch = 20 )
+#adjr2最大值为7，cp最小值为7，BIC最小值为5  ，但是结合图像，当number of variables = 3时，这三个统计量对应的值与其最优值相差很小，根据principle of parsimary原则，我们选择number of variables = 3
+coef(regfit.full, 3)
+```
+
+###8.(e)
+当选择number of variables = 3时，最优子集选择法,向前和向后选择法三种方法得到的系数相同，为  
+##           (Intercept) poly(x, 10, raw = T)1 poly(x, 10, raw = T)2  poly(x, 10, raw = T)3  
+##             3.0615072             0.9752803             1.8762090    3.0176386  
+当用lasso时，最优lambda产生的变量数目为7
+```{r}
+library(glmnet)
+x = model.matrix(y ~ poly(x, 10, raw = T))[, -1]
+grid = 10^seq(10,-2,length = 100)
+set.seed(1)
+cv.out  = cv.glmnet(x, y, alpha = 1)
+plot(cv.out)
+bestlam = cv.out$lambda.min
+bestlam
+out = glmnet(x, y, alpha = 1, lambda = grid)
+lasso.coef = predict(out, type = "coefficients", s = bestlam)
+lasso.coef
+```
+
+###8.(f)
+最优子集选择法，adjr2最大值为4，cp最小值为2，BIC最小值为1   
+lasso得到的number of variables = 1, the Coefficients of X7 = 6.776797
+## (Intercept)=3.904188  
+## poly(x, 10, raw = T)7=6.776797  
+```{r}
+set.seed(1)
+#x = rnorm(100, mean = 2, sd = 1)
+x = rnorm(100)
+epsilon = rnorm(100)
+y = 3 + 7*x^7 + epsilon
+#最优子集选择法
+xy7 = data.frame(x, y)
+regfit.full = regsubsets(y ~ poly(x, 10, raw = T), data = xy7, nvmax = 10)
+reg.summary = summary(regfit.full)
+plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+which.max(reg.summary$adjr2)
+points(4,reg.summary$adjr2[4], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, 4)
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+which.min(reg.summary$cp)
+points(2,reg.summary$cp[2], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, 2)
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+which.min(reg.summary$bic)
+points(1,reg.summary$bic[1], col = "red", cex = 2, pch = 20 )
+#adjr2最大值为4，cp最小值为2，BIC最小值为1，我们选择number of variables = 1
+coef(regfit.full, 1)
+
+#lasso
+x = model.matrix(y ~ poly(x, 10, raw = T))[, -1]
+grid = 10^seq(10,-2,length = 100)
+set.seed(1)
+cv.out  = cv.glmnet(x, y, alpha = 1)
+plot(cv.out)
+bestlam = cv.out$lambda.min
+bestlam
+out = glmnet(x, y, alpha = 1, lambda = grid)
+lasso.coef = predict(out, type = "coefficients", s = bestlam)
+lasso.coef
+```
+
+###10.a
+```{r}
+set.seed(1)
+p = 20
+n = 1000
+epsilon = rnorm(100)
+x = matrix(rnorm(n * p), n, p)
+beta = sample(-10:10, 20, replace = T)
+beta[c(4,8,10)] = 0
+y = x%*%beta + epsilon
+```
+
+###10.b
+```{r}
+trainid = sample(1:n, 900)
+testid = (-trainid)
+ytrain = y[trainid,]
+ytest = y[testid,]
+traindata = data.frame(y = ytrain, x[trainid, ])
+testdata = data.frame(y = ytest, x[testid, ])
+```
+
+###10.c
+训练集上最优MSE对应的Number of Variables = 20
+```{r}
+#最优子集选择法
+regfit.full = regsubsets(y ~ ., data = traindata, nvmax = 20)
+reg.summary = summary(regfit.full)
+plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+which.max(reg.summary$adjr2)
+points(18,reg.summary$adjr2[18], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, 18)
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+which.min(reg.summary$cp)
+points(18,reg.summary$cp[18], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, 18)
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+which.min(reg.summary$bic)
+points(17,reg.summary$bic[17], col = "red", cex = 2, pch = 20 )
+#adjr2最大值为18，cp最小值为18，BIC最小值为17，我们选择number of variables = 17
+coef(regfit.full, 17)
+predict.regsubsets = function(object, newdata, id){
+  form = as.formula(object$call[[2]])
+  mat = model.matrix(form, newdata)
+  coefi = coef(object, id = id)
+  xvars = names(coefi)
+  mat[, xvars]%*%coefi
+}
+training.mse = rep(NA, 20)
+for(i in 1:20){
+  pred = predict(regfit.full, traindata, id = i)
+  training.mse[i] = mean((traindata$y - pred)^2)
+}
+plot(training.mse, type = "b", main = "MSE in training data", xlab = "number of variables")
+which.min(training.mse)
+points(which.min(training.mse),training.mse[which.min(training.mse)], col = "red", cex = 2, pch = 20  )
+```
+
+###10.d
+测试集上最优MSE对应的Number of Variables = 17
+```{r}
+#最优子集选择法
+test.mse = rep(NA, 20)
+for(i in 1:20){
+  pred = predict(regfit.full, testdata, id = i)
+  test.mse[i] = mean((testdata$y - pred)^2)
+}
+plot(test.mse, type = "b", main = "MSE in test data", xlab = "number of variables")
+which.min(test.mse)
+points(which.min(test.mse),test.mse[which.min(test.mse)], col = "red", cex = 2, pch = 20  )
+```
+
+###10.e
+测试集上最优MSE对应的Number of Variables = 17
+```{r}
+which.min(test.mse)
+```
+
+###10.f
+测试集上最优MSE对应的Number of Variables = 17，真实模型中有3个系数为0，训练集上的Number of Variables = 17时，这三个变量的系数为0，其他系数和真实模型的系数相差不大。
+```{r}
+coef(regfit.full, 17)
+merge(data.frame(betas = names(coef(regfit.full, id=20))[-1],beta), data.frame(betas=names(coef(regfit.full, id=17)),coef(regfit.full, id=17)), all.x=T)
+```
+
+
+###10.g
+```{r}
+err.coef <- rep(NA, 20)
+for(i in 1:20) {
+  coef.i <- coef(regfit.full, id=i)
+  df.err <- merge(data.frame(betas = names(coef(regfit.full, id=20))[-1],beta), data.frame(betas=names(coef.i),coef.i), all.x=T)
+  df.err[is.na(df.err[,3]),3] <- 0
+  err.coef[i] <- sqrt(sum((df.err[,2] - df.err[,3])^2))
+}
+plot(1:20, err.coef, type="b", main="Coefficient Error", xlab="Number of Predictors")
+which.min(err.coef)
+points(which.min(err.coef), err.coef[which.min(err.coef)], col="red", pch=16)
+```
