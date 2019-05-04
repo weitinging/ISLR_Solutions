@@ -1,0 +1,285 @@
+---
+title: ''
+output: html_document
+---
+
+###2.a    
+$\lambda = \infty, m = 0: 当\lambda = \infty时，第一项趋近于0; 当m = 0, 惩罚项变为0; 则\hat{g}=0$ 
+
+###2.b  
+$\lambda = \infty, m = 1: 当\lambda = \infty时，第一项趋近于0; 当m = 1时，惩罚项变为常数，\hat{g}会变成一条尽可能接近所有训练点的直线并且与x轴平行$  
+
+###2.c  
+$\lambda = \infty, m = 2: 当\lambda = \infty时，第一项趋近于0;\hat{g(x)}会变成一条二次曲线$  
+
+###2.d  
+$\lambda = \infty, m = 3: 当\lambda = \infty时，第一项趋近于0;\hat{g(x)}会变成一条四次曲线$  
+
+###2.e  
+$\lambda = 0, m = 3: 当\lambda = 0时，惩罚项不起作用，\hat{g}为最小二乘拟合线$  
+
+###4.
+$x = c(-2, 2)$  
+$-3<x<0, y = 1 + 1*(0) + 3*(0) = 1$  
+$0≤x<1, y = 1 + 1*(1) + 3*(0) = 2$  
+$1≤x≤2, y = 1 + 1*(1-x+1) + 3*(0) = 3-x$  
+$2<x<3, y = 1$  
+$3≤x≤4, y = 1 + 1*(0) + 3*(x-3) = 3*x - 8$  
+$4<x≤5, y = 1 + 1*(0) + 3*1 = 4$  
+$x>5, y = 1$ 
+
+```{r }
+library(ggplot2)
+x1 = seq(-3, 0, 0.2)
+y1 = rep(1, length(x1))
+x2 = seq(0, 1, 0.2)
+y2 = rep(2, length(x2))
+x3 = seq(1, 2, 0.2)
+y3 = 3 - x3
+x4 = seq(2, 3, 0.2)
+y4 = rep(1, length(x4))
+x5 = seq(3, 4, 0.2)
+y5 = 3*x5 - 8
+x6 = seq(4, 5, 0.2)
+y6 = rep(4, length(x6))
+x7 = seq(5, 6, 0.2)
+y7 = rep(1, length(x7))
+data3 = data.frame(x = c(x1,x2,x3,x4,x5,x6,x7), y = c(y1,y2,y3,y4,y5,y6,y7))
+ggplot() + geom_line(data = data3, aes(x = x, y = y,colour = "red")) + geom_vline(xintercept = c(-2,2))
+
+```
+
+###6.a
+根据交叉验证法的误差选择4阶多项式  
+#[1] 1675.837 1601.012 1598.801 1594.217 1594.625 1594.888 1595.500 1595.436 1596.335 1595.835  
+根据ANOVA选择4阶多项式  
+#1   2998 5022216                                     
+#2   2997 4793430  1    228786 143.5931 < 2.2e-16 ***  
+#3   2996 4777674  1     15756   9.8888  0.001679 **   
+#4   2995 4771604  1      6070   3.8098  0.051046 .    
+#5   2994 4770322  1      1283   0.8050  0.369682      
+```{r}
+#CV
+library(boot)
+library(ISLR)
+attach(Wage)
+set.seed(1)
+cv.error.10 = rep(0,10)
+for(i in 1:10){
+  glm.fit = glm(wage ~ poly(age,i), data = Wage)
+  cv.error.10[i] = cv.glm(Wage, glm.fit, K=10)$delta[1]
+  }
+cv.error.10
+
+#ANOVA
+fit.1 = lm(wage ~ age, data = Wage)
+fit.2 = lm(wage ~ poly(age, 2), data = Wage)
+fit.3 = lm(wage ~ poly(age, 3), data = Wage)
+fit.4 = lm(wage ~ poly(age, 4), data = Wage)
+fit.5 = lm(wage ~ poly(age, 5), data = Wage)
+anova(fit.1, fit.2, fit.3, fit.4, fit.5)
+
+```
+
+
+###6.b
+根据阶梯函数的交叉验证结果，选择7个分割点，即分为8段  
+#[1] 1734.691 1685.040 1636.679 1631.129 1626.023 1613.915 1602.907 1609.653 1606.757  
+```{r}
+cv.error = rep(0,9)
+for(i in 2:10){
+  Wage$age.cut = cut(age, i)
+  glm.fit = glm(wage ~ age.cut, data = Wage)
+  cv.error[i-1] = cv.glm(Wage, glm.fit, K=10)$delta[1]
+  }
+cv.error
+
+table(cut(age, 8))
+agelims = range(age)
+age.grid = seq(from = agelims[1], to = agelims[2])
+fit = lm(wage ~ cut(age, 8), data = Wage)
+coef(summary(fit))
+preds = predict(fit, newdata = list(age = age.grid), se = T)
+se.bands = cbind(preds$fit + 2*preds$se.fit, preds$fit - 2*preds$se.fit)
+par(mfrow = c(1,1))
+plot(age, wage, xlim = agelims, cex = 0.5, col = "darkgrey")
+lines(age.grid, preds$fit, lwd = 2, col = "blue")
+matlines(age.grid, se.bands, lwd = 1, col = "blue", lty = 3)
+```
+
+###8
+根据交叉验证法选择2阶多项式  
+#[1] 24.10716 19.24186 19.29106 19.45578 19.25644 18.86037 18.84461 18.77549 19.66007 19.54238  
+```{r}
+library(boot)
+library(ISLR)
+attach(Auto)
+set.seed(1)
+cv.error.10 = rep(0,10)
+for(i in 1:10){
+  glm.fit = glm(mpg ~ poly(horsepower,i), data = Auto)
+  cv.error.10[i] = cv.glm(Auto, glm.fit, K=10)$delta[1]
+  }
+cv.error.10
+
+horsepowerlims = range(horsepower)
+horsepower.grid = seq(from = horsepowerlims[1], to = horsepowerlims[2])
+fit = lm(mpg ~ poly(horsepower, 2, raw = T), data = Auto)
+preds = predict(fit, newdata = list(horsepower = horsepower.grid), se = T)
+se.bands = cbind(preds$fit + 2*preds$se.fit, preds$fit - 2*preds$se.fit)
+plot(horsepower, mpg, xlim = horsepowerlims, cex = 0.5, col = "darkgrey")
+lines(horsepower.grid, preds$fit, lwd = 2, col = "blue")
+matlines(horsepower.grid, se.bands, lwd = 1, col = "blue", lty = 3)
+```
+
+###10.a
+训练集：adjr2最大值为16，cp最小值为13，BIC最小值为10  
+测试集：最优MSE对应的Number of Variables = 13,4个变量为0  
+##   (Intercept)    PrivateYes          Apps        Accept     Top10perc   
+## -2003.1606724  2144.0096636    -0.2703312     0.6744508    21.3163529   
+##   F.Undergrad    Room.Board      Personal           PhD      Terminal   
+##    -0.1643474     0.9494635    -0.2572771    20.3188113    17.5411633  
+##     S.F.Ratio   perc.alumni        Expend     Grad.Rate   
+##   -55.7769941    43.0363616     0.1862058    25.8272620  
+
+```{r}
+library(leaps)
+library(ISLR)
+attach(College)
+dim(College)
+n = 777
+trainid = sample(1:n, 700)
+testid = (-trainid)
+ytrain = College[trainid, "Outstate"]
+ytest = College[testid, "Outstate" ]
+traindata = College[trainid,  ]
+testdata = College[testid, ]
+regfit.full = regsubsets(Outstate ~ ., data = traindata, nvmax = 17)
+reg.summary = summary(regfit.full)
+par(mfrow=c(2,2))
+plot(reg.summary$adjr2, xlab = "Number of Variables", ylab = "adjr2", type = "l")
+maxr2 = which.max(reg.summary$adjr2)
+points(maxr2,reg.summary$adjr2[maxr2], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, maxr2)
+plot(reg.summary$cp, xlab = "Number of Variables", ylab = "cp", type = "l")
+mincp = which.min(reg.summary$cp)
+points(mincp,reg.summary$cp[mincp], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, mincp)
+plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+minbic = which.min(reg.summary$bic)
+points(minbic,reg.summary$bic[minbic], col = "red", cex = 2, pch = 20 )
+coef(regfit.full, minbic)
+predict.regsubsets = function(object, newdata, id){
+  form = as.formula(object$call[[2]])
+  mat = model.matrix(form, newdata)
+  coefi = coef(object, id = id)
+  xvars = names(coefi)
+  mat[, xvars]%*%coefi
+}
+test.mse = rep(NA, 17)
+for(i in 1:17){
+  pred = predict(regfit.full, testdata, id = i)
+  test.mse[i] = mean((testdata$Outstate - pred)^2)
+}
+plot(test.mse, type = "b", main = "MSE in test data", xlab = "number of variables")
+mintest = which.min(test.mse)
+points(which.min(test.mse),test.mse[which.min(test.mse)], col = "red", cex = 2, pch = 20  )
+coef(regfit.full, mintest)
+```
+###10.b
+```{r}
+library(gam)
+gam.fit = gam(Outstate ~ Private + s(Apps,3) + s(Accept, 4) + s(Top10perc, 3) + s(F.Undergrad, 3) + s(Room.Board, 3) + s(Personal, 3) + s(PhD, 3) + s(Terminal, 3) + s(S.F.Ratio, 3) + s(perc.alumni, 3) + s(Expend, 3) + s(Grad.Rate, 3), data = College)
+par(mfrow=c(3,5))
+plot(gam.fit, se = T, col = "blue")
+```
+
+###10.c
+GAM得到的MSE为2951293，显性模型得到的MSE为4144340，GAM优于线性模型
+```{r}
+pred = predict(gam.fit, testdata)
+mse.error = mean((ytest - pred)^2)
+test.mse[10]
+
+```
+
+###10.d
+Accept, Personal, S.F.Ratio, Expend为非线性关系
+```{r}
+summary(gam.fit)
+```
+
+###11.a-f
+真实数据中：beta0 = -10，beta1 = 2，beta2 = 11  
+向后拟合中，迭代1000时：beta0 = -9.931043，beta1 = 2.02111，beta2 = 10.94653  
+多元线性回归中：beta0 = -9.931，beta1 = 2.021，beta2 = 10.947  
+向后拟合和多元线性回归对于参数都能达到很好的估计  
+```{r}
+#11.a
+set.seed(1)
+x1 = rnorm(100, mean = 3, sd = 1)
+x2 = rnorm(100, mean = 2, sd = 1)
+epsilon = rnorm(100)
+y = -10 + 2*x1 +11*x2 + epsilon
+#11.b
+beta1 = 10
+a = y - beta1*x1
+#y = beta0 + beta1*x1 + beta2*x2 + epsilon
+#a = y - beta1*x1 = beta0  + beta2*x2 + epsilon
+#11.c
+beta2 = lm(a ~ x2)$coef[2]
+#11.d
+a = y - beta2*x2
+beta1 = lm(a ~ x1)$coef[2]
+#11.e
+beta1 = 8
+beta = diag(0, 1000, 3)
+for (i in 1:1000){
+  a = y - beta1*x1
+  beta2 = lm(a ~ x2)$coef[2]
+  beta0 = lm(a ~ x2)$coef[1]
+  beta[i, 1] = beta0
+  beta[i, 2] = beta1
+  beta[i, 3] = beta2
+  a = y - beta2*x2
+  beta1 = lm(a ~ x1)$coef[2]
+}
+	
+plot(beta[,1]~rep(1:1000,1), pch=15, cex = 0.3, col="DarkTurquoise", ylim = c(-30,20), xlab = "Number of replication", ylab="Value of Coefficients")
+points(rep(1:1000,1),beta[,2], pch=16, cex = 0.3, col="DeepPink")
+points(rep(1:1000,1),beta[,3], pch=17, cex = 0.3, col="RosyBrown")
+lines(beta[,1],col="DarkTurquoise",lty=1, lwd = 2)#lty=1表示用实线连起来
+lines(beta[,2],col="DeepPink",lty=1, lwd = 2)#lty=2表示用虚线连起来
+lines(beta[,3],col="RosyBrown",lty=1, lwd = 2)#lty=3表示用点线连起来
+legend(850, -15, c("beta0","beta1","beta2"),col=c("DarkTurquoise","DeepPink","RosyBrown"),text.col=c("DarkTurquoise","DeepPink","RosyBrown"),pch=c(15,16,17))
+#11.f
+lm.fit = lm(y ~ x1 + x2)
+lm.fit$coef
+```
+
+###11.g
+向后拟合中，迭代1次才能得到对多元线性回归模型较好的近似结果
+
+###12
+向后拟合中，迭代1次才能得到对多元线性回归模型较好的近似结果
+```{r}
+set.seed(1)
+p = 100
+n = 300
+betas = rnorm(p, mean = 10, sd = 1)
+X = matrix(rnorm(n * p), nrow = n, ncol = p)
+epsilon = rnorm(n)
+y = X%*%betas + epsilon
+plot(y)
+lm.fit = lm(y ~ X)
+betahat = diag(0, 200, 100)
+mse.error = rep(0,200)
+for (i in 1:200){
+  for (k in 1:100){
+    a = y - (X[,-k]%*%betahat[i, -k])
+    betahat[i, k] = lm(a ~ X[,k])$coef[2]
+  }
+  mse.error[i] = mean((y - (X%*%betahat[i,]))^2)
+}
+plot(1:200,mse.error)
+```
